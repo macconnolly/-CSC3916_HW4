@@ -332,8 +332,8 @@ router.route('/movie/:id')
 
 // Create new review
 router.route('/reviews')
-    .post(authJwtController.isAuthenticated, function(req, res) {
-
+    .post(authJwtController.isAuthenticated, function (req, res) {
+        // Event value must be numeric.
         const usertoken = req.headers.authorization;
         const token = usertoken.split(' ');
         const decodedToken = jwt.verify(token[1], process.env.SECRET_KEY).username;
@@ -345,15 +345,19 @@ router.route('/reviews')
         newReview.reviewBody = req.body.reviewBody;
         newReview.reviewScore = req.body.reviewScore;
 
+        trackDimension('Feedback', 'Rating', 'Feedback for Movie', newReview.reviewScore, newReview.movieName, '1')
+            .then(function (response) {
+                newReview.save(function(err, review) {
+                    if (err) {
+                        return res.status(500).jsonp({status : 500, message : err.message });
+                    }
+                    res.status(200).jsonp(review).end();
 
 
-        newReview.save(function(err, review) {
-            if (err) {
-                return res.status(500).jsonp({status : 500, message : err.message });
-            }
-            trackDimension('Feedback', 'Rating', 'Feedback for Movie', reviewScore, movieName, '1')
-            res.status(200).jsonp(review);
-        });
+                });
+                console.log(JSON.stringify(response.body));
+
+            })
     });
 
 
