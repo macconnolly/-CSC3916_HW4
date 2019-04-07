@@ -339,7 +339,19 @@ router.route('/reviews/:reviewID')
         });
     });
 
-
+// Delete specific review by ID
+router.route('/reviews/:reviewID')
+    .delete(authJwtController.isAuthenticated, function (req, res) {
+        var id = req.params.reviewID;
+        Review.findById(id, function(err, review) {
+            review.remove(function(err) {
+                if (err) {
+                    return res.status(500).jsonp({status : 500, message: err.message });
+                }
+                res.status(200).jsonp({status : 200, message : 'Review deleted.' });
+            });
+        });
+    });
 
 app.use('/', router);
 app.listen(process.env.PORT || 8080);
