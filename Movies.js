@@ -32,8 +32,8 @@ var movieSchema = new Schema({
 
     },
     actors: [{
-        actorName: actorName,
-        characterName: characterName
+        actorName: String,
+        characterName: String
     }]
 
 });
