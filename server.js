@@ -282,9 +282,16 @@ router.route('/movie')
         console.log('Movie Title: ' + movieTitle);
         Movie.findOne({title : movieTitle}).exec(function (err, movie) {
                 if (err) res.send(err);
-                console.log(movie);
 
-                res.json(movie);
+                console.log('Movie ' + movie);
+                if (movie == null) {
+                    res.status(400);
+                    res.send('No movie found');
+                }
+                else{
+                    res.status(200).jsonp(movie);
+                }
+
             }
 
         );
@@ -338,6 +345,7 @@ router.route('/reviews')
         const token = usertoken.split(' ');
         const decodedToken = jwt.verify(token[1], process.env.SECRET_KEY).username;
 
+
         var newReview = new Review();
 
         newReview.movieName = req.body.movieTitle;
@@ -345,26 +353,36 @@ router.route('/reviews')
         newReview.reviewBody = req.body.reviewBody;
         newReview.reviewScore = req.body.reviewScore;
 
+
+
         Movie.find({'title': newReview.movieName}, function (err, movie) {
 
+            console.log(movie.length);
+
+            if(movie == 0){
+                console.log(movie)
+                console.log('null movie')
+                res.status(400);
+                res.send('Movie for this review does not exist').end();
+            }
+            else{
+
+                trackDimension(movie.genre, '/reviews', 'APIRequestforMovieReview', newReview.reviewScore.toString(), newReview.movieName, '1')
+                    .then(function (response) {
+                        newReview.save(function (err, review) {
+                            if (err) {
+                                return res.status(500).jsonp({status: 500, message: err.message});
+                            }
+                            res.status(200).jsonp(review).end();
 
 
-
-
-            trackDimension(movie.genre.toString(), '/reviews', 'APIRequestforMovieReview', newReview.reviewScore.toString(), newReview.movieName, '1')
-                .then(function (response) {
-                    newReview.save(function (err, review) {
-                        if (err) {
-                            return res.status(500).jsonp({status: 500, message: err.message});
-                        }
-                        res.status(200).jsonp(review).end();
+                        });
 
 
                     });
+               }
 
-
-                })
-        })
+            })
     });
 
 
