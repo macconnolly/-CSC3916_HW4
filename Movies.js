@@ -3,27 +3,13 @@ var Schema = mongoose.Schema;
 var Review = require('./Reviews');
 var client = { MongoClient } = require('mongodb');
 
-const url = 'mongodb://localhost:27017';
+
 const dbName = 'movie-assignment-3';
 
 MongoClient.connect(process.env.DB, { useNewUrlParser: true }, function(err, client) {
 
     const db = client.db(dbName);
     const movies = db.collection('movies');
-
-    movies.aggregate([
-        {
-            $lookup: {
-                from: 'reviews',
-                localField: 'title',
-                foreignField: 'movieName',
-                as: 'reviews'
-            }
-        },
-        {
-            $unwind: "reviews"
-        }
-    ]);
 
 });
 
@@ -45,25 +31,14 @@ var movieSchema = new Schema({
 
 
     },
+    actors: [{
+        actorName: actorName,
+        characterName: characterName
+    }]
 
 });
 
 
-
-let Movies = mongoose.model("Movies", movieSchema );
-Movies.aggregate([
-    {
-        $lookup: {
-            from: 'reviews',
-            localField: 'title',
-            foreignField: 'movieName',
-            as: 'reviews'
-        }
-    },
-    {
-        $unwind: "reviews"
-    }
-]);
 
 
 
