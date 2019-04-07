@@ -22,10 +22,10 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/yarn.lock">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="205">
+            <state relative-caret-position="4110">
               <caret line="274" column="8" selection-start-line="274" selection-start-column="4" selection-end-line="274" selection-end-column="8" />
             </state>
           </provider>
@@ -58,7 +58,7 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/package.json">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="345">
@@ -119,6 +119,7 @@
       <find>/movies/</find>
       <find>stringify</find>
       <find>if</find>
+      <find>body</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -246,12 +247,12 @@
       <workItem from="1553122727792" duration="8924000" />
       <workItem from="1554165040449" duration="4340000" />
       <workItem from="1554659201947" duration="679000" />
-      <workItem from="1554659991126" duration="2088000" />
+      <workItem from="1554659991126" duration="2285000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="55556000" />
+    <option name="totallyTimeSpent" value="55753000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1680" height="1027" extended-state="0" />
@@ -377,17 +378,17 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/yarn.lock">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4110">
+          <caret line="274" column="8" selection-start-line="274" selection-start-column="4" selection-end-line="274" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/package.json">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="345">
           <caret line="23" column="11" selection-start-line="23" selection-start-column="5" selection-end-line="23" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/yarn.lock">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="205">
-          <caret line="274" column="8" selection-start-line="274" selection-start-column="4" selection-end-line="274" selection-end-column="8" />
         </state>
       </provider>
     </entry>
