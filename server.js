@@ -345,19 +345,26 @@ router.route('/reviews')
         newReview.reviewBody = req.body.reviewBody;
         newReview.reviewScore = req.body.reviewScore;
 
-        trackDimension('Feedback', 'Rating', 'Feedback for Movie', newReview.reviewScore, newReview.movieName, '1')
-            .then(function (response) {
-                newReview.save(function(err, review) {
-                    if (err) {
-                        return res.status(500).jsonp({status : 500, message : err.message });
-                    }
-                    res.status(200).jsonp(review).end();
+        Movie.find({'title': newReview.movieName}, function (err, movie) {
 
 
-                });
-                console.log(JSON.stringify(response.body));
 
-            })
+
+
+            trackDimension(movie.genre.toString(), '/reviews', 'APIRequestforMovieReview', newReview.reviewScore.toString(), newReview.movieName, '1')
+                .then(function (response) {
+                    newReview.save(function (err, review) {
+                        if (err) {
+                            return res.status(500).jsonp({status: 500, message: err.message});
+                        }
+                        res.status(200).jsonp(review).end();
+
+
+                    });
+
+
+                })
+        })
     });
 
 
