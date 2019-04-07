@@ -1,25 +1,74 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var passport = require('passport');
-var authJwtController = require('./auth_jwt');
-var User = require('./Users');
-var Movie = require('./Movies');
-var Review = require('./Reviews');
-var jwt = require('jsonwebtoken');
+const express = require('express');
+const bodyParser = require('body-parser');
+const passport = require('passport');
+const authJwtController = require('./auth_jwt');
+const User = require('./Users');
+const Movie = require('./Movies');
+const Review = require('./Reviews');
+const jwt = require('jsonwebtoken');
+const crypto = require("crypto");
+const rp = require('request-promise');
 
-var app = express();
+
+const app = express();
+const router = express.Router();
+const mongoose = require('mongoose');
+const client = { MongoClient } = require('mongodb');
+
+const db = MongoClient.connect(process.env.DB, { useNewUrlParser: true });
+const GA_TRACKING_ID = process.env.GA_KEY;
+
 module.exports = app; // for testing
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(passport.initialize());
-let router = express.Router();
-const mongoose = require('mongoose')
-let client = { MongoClient } = require('mongodb');
 
-let db = MongoClient.connect(process.env.DB, { useNewUrlParser: true });
+function trackDimension(category, action, label, value, dimension, metric) {
 
+    var options = { method: 'GET',
+        url: 'https://www.google-analytics.com/collect',
+        qs:
+            {   // API Version.
+                v: '1',
+                // Tracking ID / Property ID.
+                tid: GA_TRACKING_ID,
+                // Random Client Identifier. Ideally, this should be a UUID that
+                // is associated with particular user, device, or browser instance.
+                cid: crypto.randomBytes(16).toString("hex"),
+                // Event hit type.
+                t: 'event',
+                // Event category.
+                ec: category,
+                // Event action.
+                ea: action,
+                // Event label.
+                el: label,
+                // Event value.
+                ev: value,
+                // Custom Dimension
+                cd1: dimension,
+                // Custom Metric
+                cm1: metric,
+                cd3: dimension,
+                cm3: metric
 
+            },
+        headers:
+            {  'Cache-Control': 'no-cache' } };
+
+    return rp(options);
+};
+
+router.route('/test')
+    .get(function (req, res) {
+        // Event value must be numeric.
+        trackDimension('Feedback', 'Rating', 'Feedback for Movie', '3', 'MOVIE NAME', '1')
+            .then(function (response) {
+                console.log(JSON.stringify(response.body));
+                res.status(200).send('Event tracked.').end();
+            })
+    });
 
 // User Routes
 router.route('/users/:userID')
@@ -302,6 +351,7 @@ router.route('/reviews')
             if (err) {
                 return res.status(500).jsonp({status : 500, message : err.message });
             }
+            trackDimension('Feedback', 'Rating', 'Feedback for Movie', reviewScore, movieName, '1')
             res.status(200).jsonp(review);
         });
     });
