@@ -9,7 +9,7 @@ const dbName = 'movie-assignment-3';
 MongoClient.connect(process.env.DB, { useNewUrlParser: true }, function(err, client) {
 
     const db = client.db(dbName);
-    const movies = db.collection('movies');
+
 
 });
 
@@ -34,7 +34,11 @@ var movieSchema = new Schema({
     actors: [{
         actorName: String,
         characterName: String
-    }]
+    }],
+    imageUrl: {
+        type: String,
+        required: true
+    }
 
 });
 

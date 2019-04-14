@@ -8,21 +8,23 @@ const Review = require('./Reviews');
 const jwt = require('jsonwebtoken');
 const crypto = require("crypto");
 const rp = require('request-promise');
+const cors = require('cors');
 
 
 const app = express();
 const router = express.Router();
 const mongoose = require('mongoose');
-const client = { MongoClient } = require('mongodb');
 
-const db = MongoClient.connect(process.env.DB, { useNewUrlParser: true });
+
+const client = { MongoClient } = require('mongodb');
+const dbName = 'movies-assignment-3';
+
 const GA_TRACKING_ID = process.env.GA_KEY;
 
 module.exports = app; // for testing
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use(passport.initialize());
+
+app.use(passport.initialize(), cors(), bodyParser.json());
 
 function trackDimension(category, action, label, value, dimension, metric) {
 
@@ -97,15 +99,22 @@ router.route('/users')
     });
 
 router.post('/signup', function(req, res) {
-    if (!req.body.username || !req.body.password) {
+    console.log('Request Body: ');
+    console.log(req.body);
+    //console.log(req);
+
+    if (!req.body.email || !req.body.password) {
         res.json({success: false, message: 'Please pass username and password.'});
     }
     else {
         var user = new User();
         user.name = req.body.name;
-        user.username = req.body.username;
+        user.username = req.body.name;
+        user.email = req.body.email;
         user.password = req.body.password;
         // save the user
+        console.log(user);
+
         user.save(function(err) {
             if (err) {
                 // duplicate entry
@@ -115,7 +124,7 @@ router.post('/signup', function(req, res) {
                     return res.send(err);
             }
 
-            res.json({ success: true, message: 'User created!' });
+            res.json({success: true, message: 'Successfully created new user.'});
         });
     }
 });
@@ -127,15 +136,21 @@ router.post('/signin', function(req, res) {
     userNew.password = req.body.password;
 
     User.findOne({ username: userNew.username }).select('name username password').exec(function(err, user) {
-        if (err) res.send(err);
+
+        console.log('User login: ' + JSON.stringify(user));
+        console.log('New User: ' + JSON.stringify(userNew));
 
         user.comparePassword(userNew.password, function(isMatch){
             if (isMatch) {
                 var userToken = {id: user._id, username: user.username};
                 var token = jwt.sign(userToken, process.env.SECRET_KEY);
+                res.header("Access-Control-Allow-Origin", "*");
+                res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
                 res.json({success: true, token: 'JWT ' + token});
             }
             else {
+                res.header("Access-Control-Allow-Origin", "*");
+                res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
                 res.status(401).send({success: false, message: 'Authentication failed.'});
             }
         });
@@ -168,8 +183,7 @@ router.route('/movies')
         movieNew.releaseDate = req.body.releaseDate;
         movieNew.genre = req.body.genre;
         movieNew.actors = req.body.actors;
-        // console.log(req.body)
-        // console.log(movieNew.actors);
+        movieNew.imageUrl = req.body.imageUrl;
 
         if (movieNew.actors.length < 3){
             return res.status(500).jsonp({status : 500, message : "Must include at least three actors" });
@@ -180,7 +194,7 @@ router.route('/movies')
         if (err) {
             return res.status(500).jsonp({status : 500, message : err.message });
         }
-        res.status(200).jsonp(movie);
+        return res.status(200).jsonp({status : 200, message : 'Successfully created new movie', success: true });
     });
 });
 
@@ -231,19 +245,19 @@ router.route('/movies/:movieID')
     });
 
 
-router.route('/movie/:movieTitle')
+router.route('/movies')
     .get(authJwtController.isAuthenticated, function (req, res) {
-        let title = req.params.movieTitle;
 
-        console.log(req.query)
-        console.log(req.query.reviews);
-        console.log(req.query.reviews == 'true')
 
-        if (req.query.reviews == 'true') {
-            Movie.aggregate([
-                { $match:
-                        { title: title }
-                },
+        if (req.query.reviews === 'true') {
+        const dbName = 'movies-assignment-3';
+        client.connect(process.env.DB, function (err, client) {
+            if (err) {
+                throw err;
+            }
+            let collection = client.db(dbName).collection('movies');
+            collection.aggregate([
+
                 {
                     $lookup: {
                         from: 'reviews',
@@ -251,29 +265,50 @@ router.route('/movie/:movieTitle')
                         foreignField: 'movieName',
                         as: 'reviews'
                     }
-                }
-
-            ], (err, result) => {
+                },
+                {
+                    "$addFields": {
+                        "avgRating": {
+                            "$divide": [
+                                { // expression returns total
+                                    "$reduce": {
+                                        "input": "$reviews",
+                                        "initialValue": 0,
+                                        "in": { "$add": ["$$value", "$$this.reviewScore"] }
+                                    }
+                                },
+                                { // expression returns ratings count
+                                    "$cond": [
+                                        { "$ne": [ { "$size": "$reviews" }, 0 ] },
+                                        { "$size": "$reviews" },
+                                        1
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+                { "$sort": { "avgRating": -1 } }
+            ]).toArray(function (err, documents) {
                 if (err) {
-
-                    res.json({ message: 'Error. Cannot list roles', errror: err });
+                    res.json({message: 'Error. Cannot list roles', error: err});
                 }
-                res.status(200).jsonp(result);
-
-            });
-
-        }
-        else {
-            Movie.find({'title' : title}, function(err, movie) {
+                res.status(200).jsonp(documents);
+                client.close()
+            })
+        })}
+        else{
+            Movie.find({}, function(err, movie) {
                 if (err) res.send(err);
-
+                console.log('finding movies not in match')
                 let movieJson = JSON.stringify(movie);
                 // return that movie
                 res.json(movie);
+
             });
         }
-
     });
+
 
 
 router.route('/movie')
@@ -299,19 +334,18 @@ router.route('/movie')
     });
 
 
-router.route('/movies')
-    .get(authJwtController.isAuthenticated, function (req, res) {
-
-
-        Movie.find(function (err, movies) {
-            if (err) res.send(err);
-            // return the movies
-
-            res.json(movies);
-        });
-    });
-
-
+// router.route('/movies')
+//     .get(function (req, res) {
+//         console.log('finding movies');
+//         Movie.find(function (err, movies) {
+//             if (err) res.send(err);
+//             // return the movies
+//             console.log(JSON.stringify(movies));
+//             res.json(movies);
+//         });
+//     });
+//
+//
 router.route('/movie/:id')
     .put(authJwtController.isAuthenticated, function (req, res) {
     Movie.findById(req.params.id, function(err, movie) {
@@ -339,27 +373,28 @@ router.route('/movie/:id')
 
 // Create new review
 router.route('/reviews')
-    .post(authJwtController.isAuthenticated, function (req, res) {
+    .post(function (req, res) {
         // Event value must be numeric.
-        const usertoken = req.headers.authorization;
-        const token = usertoken.split(' ');
-        const decodedToken = jwt.verify(token[1], process.env.SECRET_KEY).username;
+        // const usertoken = req.headers.authorization;
+        // const token = usertoken.split(' ');
+        // const decodedToken = jwt.verify(token[1], process.env.SECRET_KEY).username;
 
 
         var newReview = new Review();
 
         newReview.movieName = req.body.movieTitle;
-        newReview.reviewerName = decodedToken;
+        newReview.reviewerName = 'macconnolly';
         newReview.reviewBody = req.body.reviewBody;
         newReview.reviewScore = req.body.reviewScore;
 
 
+        console.log(JSON.stringify(newReview.movieName));
 
-        Movie.find({'title': newReview.movieName}, function (err, movie) {
+        Movie.findOne({"title": newReview.movieName}, function (err, movie) {
 
-            console.log(movie.length);
 
-            if(movie == 0){
+
+            if(movie == null){
                 console.log(movie)
                 console.log('null movie')
                 res.status(400);
