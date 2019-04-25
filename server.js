@@ -142,8 +142,10 @@ router.post('/signin', function(req, res) {
 
         user.comparePassword(userNew.password, function(isMatch){
             if (isMatch) {
+
                 var userToken = {id: user._id, username: user.username};
-                var token = jwt.sign(userToken, process.env.SECRET_KEY);
+
+                var token = jwt.sign(userToken, process.env.SECRET_KEY, );
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
                 res.json({success: true, token: 'JWT ' + token});
@@ -375,15 +377,15 @@ router.route('/movie/:id')
 router.route('/reviews')
     .post(function (req, res) {
         // Event value must be numeric.
-        // const usertoken = req.headers.authorization;
-        // const token = usertoken.split(' ');
-        // const decodedToken = jwt.verify(token[1], process.env.SECRET_KEY).username;
+        const usertoken = req.headers.authorization;
+        const token = usertoken.split(' ');
+        const decodedToken = jwt.verify(token[1], process.env.SECRET_KEY).username;
 
 
         var newReview = new Review();
 
         newReview.movieName = req.body.movieTitle;
-        newReview.reviewerName = 'macconnolly';
+        newReview.reviewerName = decodedToken;
         newReview.reviewBody = req.body.reviewBody;
         newReview.reviewScore = req.body.reviewScore;
 
@@ -418,6 +420,80 @@ router.route('/reviews')
                }
 
             })
+    });
+
+router.route('/reviews')
+    .put(function (req, res) {
+
+        let newMovieTitle = '';
+        Movie.aggregate([
+            { $match:
+                    { _id: mongoose.Types.ObjectId(req.body.movieID) }
+            }
+
+        ], (err, result) => {
+            if (err) {
+
+                res.json({ message: 'Error. Cannot list roles', errror: err });
+            }
+
+            newMovieTitle = result[0].title;
+            console.log('found movie: '+ newMovieTitle);
+            console.log('result: ' + JSON.stringify(result));
+            //res.status(200).jsonp(result);
+
+
+
+
+            const usertoken = req.headers.authorization;
+            console.log('header auth: ')
+            console.log(req.headers.authorization);
+            const token = usertoken.split(' ');
+            console.log('token ' + token[1]);
+            const decodedToken = jwt.verify(token[1], process.env.SECRET_KEY).username;
+
+
+            var newReview = new Review();
+            newReview.movieName = newMovieTitle;
+            newReview.reviewerName = decodedToken;
+            newReview.reviewBody = req.body.reviewBody;
+            newReview.reviewScore = req.body.reviewScore;
+
+
+            console.log(JSON.stringify(newReview.movieName));
+
+            Movie.findOne({"title": newMovieTitle}, function (err, movie) {
+
+
+
+                if(movie == null){
+                    console.log(movie)
+                    console.log('null movie')
+                    res.status(400);
+                    res.send('Movie for this review does not exist').end();
+                }
+                else{
+
+                    trackDimension(movie.genre, '/reviews', 'APIRequestforMovieReview', newReview.reviewScore.toString(), newReview.movieName, '1')
+                        .then(function (response) {
+                            newReview.save(function (err, review) {
+                                if (err) {
+                                    return res.status(500).jsonp({status: 500, message: err.message});
+                                }
+                                res.status(200).jsonp(review).end();
+
+
+                            });
+
+
+                        });
+                }
+
+            })
+
+        });
+
+
     });
 
 
