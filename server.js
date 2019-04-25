@@ -61,7 +61,11 @@ function trackDimension(category, action, label, value, dimension, metric) {
 
     return rp(options);
 };
-
+router.route('/ATriggerVerify.txt')
+    .get(function (req, res) {
+        // Event value must be numeric.
+        res.sendFile('./ATriggerVerify.txt');
+    });
 router.route('/test')
     .get(function (req, res) {
         // Event value must be numeric.
