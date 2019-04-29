@@ -23,8 +23,18 @@ const GA_TRACKING_ID = process.env.GA_KEY;
 
 module.exports = app; // for testing
 
+app.all('*', function(req, res, next) {
+     let origin = req.get('origin');
+     res.header('Access-Control-Allow-Origin', origin);
+     res.header("Access-Control-Allow-Headers", "X-Requested-With");
+     res.header('Access-Control-Allow-Headers', 'Content-Type');
+     next();
+});
 
-app.use(passport.initialize(), cors(), bodyParser.json());
+
+
+
+app.use(passport.initialize(), cors(), bodyParser.json(), allowCrossDomain);
 
 function trackDimension(category, action, label, value, dimension, metric) {
 
