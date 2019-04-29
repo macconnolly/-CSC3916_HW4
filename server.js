@@ -32,9 +32,7 @@ app.all('*', function(req, res, next) {
 });
 
 
-
-
-app.use(passport.initialize(), cors(), bodyParser.json(), allowCrossDomain);
+app.use(passport.initialize(), cors(), bodyParser.json());
 
 function trackDimension(category, action, label, value, dimension, metric) {
 
